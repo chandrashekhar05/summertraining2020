@@ -6,14 +6,14 @@ su - root
 sudo systemctl enable docker
 #Installing Docker Python SDK &  Creating Python File
 pip3 install docker 
-nano containers.py 
+vi containers.py 
 
 #Editing File
 #Create Containers Using Python Docker SDK 
 import docker
 import time
 client = docker.from_env()
-#Below Function Used To Checking For Images If Present Locally
+#Below Function Used To Checking For Images Present Locally Or Not
 def image_checker():
 	print("Checking For Required Images Locally")
 	try:
