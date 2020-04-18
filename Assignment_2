@@ -1,0 +1,133 @@
+#Que-1
+#Create Number Of Docker Containers i.e. 25 From Each (Alpine, Centos, Fedora, Java) Using python or bash
+#Switching To Root
+su - root
+#To Start Docker Service Whenever System Starts
+sudo systemctl enable docker
+#Installing Docker Python SDK &  Creating Python File
+pip3 install docker 
+nano containers.py 
+
+#Editing File
+#Create Containers Using Python Docker SDK 
+import docker
+import time
+client = docker.from_env()
+#Below Function Used To Checking For Images If Present Locally
+def image_checker():
+	print("Checking For Required Images Locally")
+	try:
+		alpine = client.images.get('alpine:latest')
+		fedora = client.images.get('fedora:latest')
+		centos = client.images.get('centos:latest')
+		openjdk = client.images.get('java:latest')
+		print("Found Images On The System")
+		run_containers()
+	except docker.errors.ImageNotFound:
+		print("Image/Images Not Found Locally, Pulling It From Repository")
+		client.images.pull('alpine:latest')
+		client.images.pull('centos:latest')
+		client.images.pull('fedora:latest')
+		client.images.pull('java:latest')
+def run_containers():
+	try:
+		for i in range(1,26):
+			print("Creating Alpine Container adhocnw{}".format(i))
+			client.containers.run('alpine', command='ping google.com', detach=1, restart_policy={'Name': 'always'}, name='adhocnw{}'.format(i))
+			time.sleep(2)  
+		for i in range(26,51):
+			print("Creating Centos Container adhocnw{}".format(i))
+			client.containers.run('centos', command='ping google.com', detach=1, restart_policy={'Name': 'always'}, name='adhocnw{}'.format(i))
+			time.sleep(2)    
+		for i in range(51,76):
+			print("Creating Fedora Container adhocnw{}".format(i))
+			client.containers.run('fedora', detach=1, tty=True, restart_policy={'Name': 'always'}, name='adhocnw{}'.format(i))
+			time.sleep(2)   
+		for i in range(76,101):
+			print("Creating Java Container adhocnw{}".format(i))
+			client.containers.run('java', detach=1, tty=True, restart_policy={'Name': 'always'}, name='adhocnw{}'.format(i))
+			time.sleep(2)
+	except 	docker.errors.ImageNotFound:
+		print("Images For Container Not Found, Checking Images Locally")
+		image_checker()
+        #Throws Exception If Container Configuration Is Not Correct
+	except docker.errors.ContainerError:
+		print("Container Exited Due to Some Errors")
+image_checker()		
+#Save File && Running It
+python3 containers.py
+
+
+#Que-2 
+#Save Running Containers State In text File Filtered By Name adhocnw 
+#Switching To Root
+su - root
+#Using awk To Filter Results According To Name
+docker ps --filter name=adhoc | awk '{if (NR!=1) print $NF, $(NF-6), $(NF-5), $(NF-4) }' > Container_state.txt
+
+#Checking File
+cat Container_state.txt
+
+#QUE-3
+#Create Conatainer Using Custom Image That Has Firefox As A Parent Process
+#Used Python Docker SDK
+#Switching To Root & Creating Directory
+su - root
+mkdir ubuntu && cd ubuntu
+
+#Creating a Dockerfile
+vi Dockerfile
+
+#Editing file
+FROM ubuntu
+#Installing Firefox & Xvfb & dbus
+#Docker Container Not Access Host Display Without Mounted
+#Xvfb Enables Us To Run Graphical Applications Without a Display, In Our Case "Firefox".
+#D-Bus Use to Pass Messages B/w Firefox & Xvbf 
+RUN apt-get update 
+RUN apt-get install firefox -y && apt-get install -y xvfb && apt-get install dbus-x11 -y
+
+MAINTAINER chandrashekhar3227@gmail.com
+#Running A Firefox Instance In A Container In A Window Of Resolution 720x480 And Surfing google.com
+CMD xvfb-run -a -s "-screen 0 720x480x24" firefox http://google.com 
+
+### Saving File ####
+#Creating firefox.py To Build And Run Container
+vi firefox.py
+#Using Python SDK
+import docker
+client = docker.from_env()
+def build_image():
+	try:
+		print("Building Container")
+		client.images.build(path='/home/ABC/Desktop/ubuntu/', tag='firefoxcon')
+        run_container()
+    except docker.errors.BuildError:
+		print("Check Your Configuration Before Building Image")	
+
+def run_container():
+	print("Running Container")
+	try:
+		client.containers.run('firefoxcon', name='firefoxcon')
+		print("Successful")
+	except 	docker.errors.ImageNotFound:
+		print("Images For Container Not Found, Checking Images Locally")
+		build_image()
+	except docker.errors.ContainerError:
+		print("Container Exited Due to Some Errors")
+run_container()
+
+#Saving It
+#Container Running Firefox But We Not See We Can Check In Other Terminal
+su - root 
+#To see Firefox Running In Background
+docker exec -it firedocker top 
+
+#QUE-4
+#Store Container Running Stats In Usage.txt Filtered By Name,CPU,RAM
+#Switching To Root
+su - root
+#awk to filter Results
+docker stats -a --no-stream | awk '{if (NR!=1) print $(NF-12),$(NF-11),$(NF-10), $(NF-9), $(NF-8);if (NR==1) print $(NF-13),$(NF-12),$(NF-11),$(NF-10),$(NF-9),$(NF-8),$(NF-7)}' > Usage.txt
+#Checking File
+cat Usage.txt
