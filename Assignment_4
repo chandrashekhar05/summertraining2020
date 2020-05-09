@@ -1,0 +1,38 @@
+-------Task-------
+
+----Dockerfile for ubuntu with docker and ansible----
+from ubuntu
+RUN apt-get update 
+RUN apt-get upgrade
+RUN apt-get install -y apt-transport-https 
+RUN apt-get install docker.io -y
+RUN apt-get install ansible -y
+
+
+docker build -t ubuntu_wda .
+
+----Dockerfile for alpine with parent command 'ping fb.com'----
+from alpine
+CMD ping fb.com
+
+----run container of ubuntu_wda----
+docker run -itv /var/run/docker.sock:/var/run/docker.sock --name wda_c ubuntu_wda
+
+
+cd /etc/ansible
+mkdir playbooks
+vim task.yml
+
+-----task.yml-----
+---
+ - hosts: localhost
+   tasks:
+    - name: running ping command
+      command: docker run -d --name alpine"{{item}}" alpine_ping
+      with_items:
+        - [1,2,3,4,5,6,7,8,9,10]
+
+
+ansible-playbook task.yml
+
+docker ps
