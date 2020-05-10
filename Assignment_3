@@ -1,0 +1,134 @@
+----------Task 1---------
+-----Dockerfile------
+from ubuntu
+RUN apt-get update
+RUN DEBIAN_FRONTEND=noninteractive apt install -y tzdata
+RUN apt install apache2 -y
+RUN DEBIAN_FRONTEND=noninteractive apt install php libapache2-mod-php php-mysql -y
+copy project/ /var/www/html/
+CMD apachectl -D FOREGROUND
+
+-------docker-compose.yml--------
+version: '3.3'
+services:
+  db:
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    network_mode: host
+    environment:
+      MYSQL_ROOT_PASSWORD: "123"
+  
+  ubuntu:
+    image: dcubun2
+    restart: always
+    network_mode: host
+    depends_on:
+      - db
+
+------Run Docker Compose File-------
+docker-compose up
+
+------Open Another Shell-----
+
+-----Create 'sample' database in Mysql------
+docker exec -it <db_container_id> bash
+mysql -u root -p
+-----Enter password = 123 ------
+create database sample
+exit				#exit from Mysql
+exit				#exit from Container
+
+------Open Browser and goto 'localhost' for sample website Host in Container------
+------& It is Communicate to Mysql database that Run on Another Container---------
+
+
+
+
+
+
+
+----------Task 2---------
+----Use Docker Engine From Inside Of Contianer----
+----Mount Docker Socket Inside Docker Container----
+docker run -itv /var/run/docker.sock:/var/run/docker.sock --name doceng_c docker
+
+
+
+
+
+
+----------Task 3----------
+----Update Runing Contianer Automatically----
+
+----Dockerfile For Creating Image----
+from ubuntu
+RUN apt-get update
+RUN DEBIAN_FRONTEND=noninteractive apt install -y tzdata
+RUN apt install apache2 -y
+RUN DEBIAN_FRONTEND=noninteractive apt install php libapache2-mod-php php-mysql -y
+----Project folder contains some html & php files----
+copy project/ /var/www/html/
+CMD apachectl -D FOREGROUND
+
+----Creting Image----
+docker build -t ubuntu11 .
+
+----After Creating Docker Image Push Image To Docker Hub---- 
+
+----Run Container Of Watchtower----
+----This container watch all container in daemon----
+docker run -d \
+  --name watchtower \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  v2tec/watchtower
+
+----Run Container Of ubuntu11----
+docker run -it --name ubuntu11_c ubuntu11
+
+----Run Container Of Watchtower----
+----This container watch ubuntu11_c container in daemon----
+docker run -d \
+  --name watchtower \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  v2tec/watchtower ubuntu11_c
+
+----Again Build Image To Update Docker Images Add Some Files In Project Folder And Rebuild It----
+----Dockerfile For Creating Image----
+from ubuntu
+RUN apt-get update
+RUN DEBIAN_FRONTEND=noninteractive apt install -y tzdata
+RUN apt install apache2 -y
+RUN DEBIAN_FRONTEND=noninteractive apt install php libapache2-mod-php php-mysql -y
+----Project folder contains some html & php files----
+copy project/ /var/www/html/
+CMD apachectl -D FOREGROUND
+
+----Creting Image----
+docker build -t ubuntu11 .
+
+----After Creating Docker Image Push Images To Docker Hub---- 
+
+docker ps
+----To see watchtower rebuild container of ubuntu11 Image----
+
+
+
+
+
+
+
+--------Task 4---------
+
+-----Dockerfile-----
+from ubuntu
+RUN apt-get update && apt-get -y install sudo
+RUN adduser --disabled-password --gecos '' testuser
+RUN echo "testuser  ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/testuser
+USER testuser
+
+------Create Docker Image-----
+docker build -t ubuntu01 .
+
+------Run Docker Container------
+docker run -it --name ubuntu01_c ubuntu01
